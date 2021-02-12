@@ -126,8 +126,8 @@ std::pair<std::vector<int32_t>, int> precedenceConstrainedKnapsack(
 
     // Round solution
     for (size_t i = 0; i < weight.size(); i++) {
-        // printf("%f\n", cbcSolution[i]);
-        solution[i] = cbcSolution[i] > (1 - 1e-3);
+      // printf("%f\n", cbcSolution[i]);
+      solution[i] = cbcSolution[i] > (1 - 0.5);
     }
 
     if (lpRelax) {
