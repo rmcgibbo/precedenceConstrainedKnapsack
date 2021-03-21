@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <numeric>
 #include <sstream>
 #include <vector>
 
@@ -8,12 +10,13 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+namespace py = pybind11;
 
 std::pair<std::vector<int32_t>, int> precedenceConstrainedKnapsack(
     const std::vector<double>& profit,
     const std::vector<double>& weight,
     const std::vector<std::pair<int32_t, int32_t>>& edges,
-    double maxCost,
+    double maxWeight,
     double maximumSeconds,
     int numThreads,
     int logLevel,
@@ -40,12 +43,12 @@ std::pair<std::vector<int32_t>, int> precedenceConstrainedKnapsack(
     std::vector<int> matrixColumnIndices;
     std::vector<double> matrixElements;
 
-    for (size_t rowK; rowK < edges.size(); rowK++) {
+    for (size_t rowK = 0; rowK < edges.size(); rowK++) {
         auto& edge = edges[rowK];
-        if (edge.first < 0 || edge.first >= weight.size()) {
+        if (edge.first < 0 || edge.first >= static_cast<int32_t>(weight.size())) {
             throw std::invalid_argument("Invalid edge index");
         }
-        if (edge.second < 0 || edge.second >= weight.size()) {
+        if (edge.second < 0 || edge.second >= static_cast<int32_t>(weight.size())) {
             throw std::invalid_argument("Invalid edge index");
         }
 
@@ -73,7 +76,7 @@ std::pair<std::vector<int32_t>, int> precedenceConstrainedKnapsack(
             row.insert(i, weight[i]);
         }
         row_lb.push_back(0);
-        row_ub.push_back(maxCost);
+        row_ub.push_back(maxWeight);
         matrix.appendRow(row);
     }
 
@@ -124,10 +127,39 @@ std::pair<std::vector<int32_t>, int> precedenceConstrainedKnapsack(
     // 7 linear relaxation unbounded
     // 8 stopped on iteration limit.
 
-    // Round solution
-    for (size_t i = 0; i < weight.size(); i++) {
-      // printf("%f\n", cbcSolution[i]);
-      solution[i] = cbcSolution[i] > (1 - 0.5);
+    // Sort indices (from 0 to len(solution)-1) by the distance
+    // their integrality gap.
+    std::vector<size_t> inds(weight.size());
+    std::iota(inds.begin(), inds.end(), 0);
+    std::sort(inds.begin(), inds.end(), [&](size_t i, size_t j) {
+        auto gap = [&](size_t k) -> int64_t {
+            double value = abs(round(cbcSolution[k]) - cbcSolution[k]);
+            return static_cast<int64_t>(round(value * 1e6));
+        };
+        auto gapi = gap(i);
+        auto gapj = gap(j);
+        // primary sort is on the integrality gap. but if those are
+        // equal we'll break ties by sorting by profit / weight,
+        // in reverse, so that high profit-per-weight items are rounded
+        // first
+        if (gapi == gapj) {
+            return (-profit[i] / (weight[i] + 1e-10))
+                < (-profit[j] / (weight[j] + 1e-10));
+        }
+        return gapi < gapj;
+    });
+
+    // Round solution in a way that's aware of maxWeight
+    auto currentWeight = 0.0;
+    for (auto i : inds) {
+        bool proposedSolution = round(cbcSolution[i]);
+        double proposedWeight = currentWeight + proposedSolution * weight[i];
+        if (proposedWeight <= maxWeight) {
+            solution[i] = proposedSolution;
+            currentWeight = proposedWeight;
+        } else {
+            solution[i] = 0;
+        }
     }
 
     if (lpRelax) {
@@ -138,7 +170,9 @@ std::pair<std::vector<int32_t>, int> precedenceConstrainedKnapsack(
         while (numEdgesReset != 0) {
             numEdgesReset = 0;
             for (const auto& edge : edges) {
-                // edge.first requires edge.second
+                // edge.first requires edge.second. So if edge.first is
+                // on, but edge.second is not on, then just turn off
+                // edge.first.
                 if (solution[edge.first] && !solution[edge.second]) {
                     solution[edge.first] = 0;
                     numEdgesReset++;
@@ -194,14 +228,13 @@ items) as well as the solver status code from Cbc. See the source code for the
 interpretation of the solver status codes. 0 is success and the other numbers are
 various failure modes.
         )",
-        pybind11::arg("profit"),
-        pybind11::arg("weight"),
-        pybind11::arg("edges"),
-        pybind11::arg("maxCost"),
-        pybind11::arg("maxSeconds") = 0,
-        pybind11::arg("numThreads") = 0,
-        pybind11::arg("logLevel") = 0,
-        pybind11::arg("allowableFractionGap") = 0,
-        pybind11::arg("lpRelax") = true
-    );
+        py::arg("profit"),
+        py::arg("weight"),
+        py::arg("edges"),
+        py::arg("maxWeight"),
+        py::arg("maxSeconds") = 0,
+        py::arg("numThreads") = 0,
+        py::arg("logLevel") = 0,
+        py::arg("allowableFractionGap") = 0,
+        py::arg("lpRelax") = true);
 }
