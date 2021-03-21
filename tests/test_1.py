@@ -4,8 +4,7 @@ import numpy as np
 import networkx as nx
 from precedenceConstrainedKnapsack import precedenceConstrainedKnapsack
 
-# @pytest.mark.parametrize("lpRelax", [True, False])
-@pytest.mark.parametrize("lpRelax", [True])
+@pytest.mark.parametrize("lpRelax", [True, False])
 def test_1(lpRelax):
     weight = [1, 2, 3]
     profit = [1, 4, 1]
