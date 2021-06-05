@@ -17,13 +17,17 @@
     },
     "py-utils": {
       "locked": {
-        "narHash": "sha256-EsahGJXQnOXw1wZj4239Aekkc8AlyVkQ9i9MmAvfXj0=",
-        "path": "/home/mcgibbon/projects/python-flake-utils",
-        "type": "path"
+        "lastModified": 1622925786,
+        "narHash": "sha256-rhdXGpPo+w5unxTyknBlRohjUunjipkMNQDhRhdvCwI=",
+        "owner": "rmcgibbo",
+        "repo": "python-flake-utils",
+        "rev": "a7c6e80d8fdd1f00ab5a873e3f73516554307a1f",
+        "type": "github"
       },
       "original": {
-        "path": "/home/mcgibbon/projects/python-flake-utils",
-        "type": "path"
+        "owner": "rmcgibbo",
+        "repo": "python-flake-utils",
+        "type": "github"
       }
     },
     "root": {
