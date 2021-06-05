@@ -2,6 +2,8 @@ import pytest
 import inspect
 import numpy as np
 import networkx as nx
+import sys
+print(sys.path)
 from precedenceConstrainedKnapsack import precedenceConstrainedKnapsack
 
 @pytest.mark.parametrize("lpRelax", [True, False])

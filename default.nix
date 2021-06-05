@@ -1,19 +1,25 @@
-{ pkgs ? import <nixpkgs> {}
-, python3Packages ? pkgs.python38Packages }:
+{ buildPythonPackage
+, clang-tools
+, pytestCheckHook
+, numpy
+, networkx
+, cbc
+, pybind11
+}:
 
-python3Packages.buildPythonPackage rec {
-    pname = "precedenceConstrainedKnapsack";
-    version = "0.1";
-    src = ./.;
+buildPythonPackage rec {
+  pname = "precedenceConstrainedKnapsack";
+  version = "0.1";
+  src = ./.;
 
-    nativeBuildInputs = [ pkgs.clang-tools ];
-    buildInputs = with python3Packages; [
-        pkgs.cbc
-        pybind11
-    ];
-    checkInputs = with python3Packages; [
-        pytestCheckHook
-        numpy
-        networkx
-    ];
+  nativeBuildInputs = [ clang-tools ];
+  buildInputs = [
+    cbc
+    pybind11
+  ];  
+  checkInputs = [
+    pytestCheckHook
+    numpy
+    networkx      
+  ];
 }
