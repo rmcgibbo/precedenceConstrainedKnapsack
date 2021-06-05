@@ -27,7 +27,9 @@ jobs:
         install_url: https://nixos-nix-install-tests.cachix.org/serve/lb41az54kzk6j12p81br4bczary7m145/install
         install_options: '--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve'
         extra_nix_config: |
-          experimental-features = nix-command flakes
+          experimental-features = nix-command flakes    
+    - run: |
+          sudo apt-get update -q -y && sudo apt-get install -q -y qemu-system-aarch64 qemu-efi binfmt-support qemu-user-static
     - run: |
         OPTIONS="--option system aarch64-linux
                  --option sandbox false
